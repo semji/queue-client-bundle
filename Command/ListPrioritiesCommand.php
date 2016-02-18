@@ -44,11 +44,13 @@ class ListPrioritiesCommand extends ContainerAwareCommand
             $queueClient = $this->getContainer()->get('queue_client');
         } catch (ServiceNotFoundException $e) {
             $this->output->write('No queue client service found.', Output::CRITICAL);
+
             return 1;
         }
         foreach ($queueClient->getPriorityHandler()->getAll() as $priority) {
             $output->writeln($priority);
         }
+
         return 0;
     }
 }

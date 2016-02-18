@@ -61,15 +61,18 @@ HELP
             array_walk_recursive($yml, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());
         } catch (\Exception $e) {
             $this->output->write($e->getMessage(), Output::CRITICAL);
+
             return 1;
         }
         if (null === $yml) {
             $this->output->write('File ' . $fileName . ' is empty.', Output::WARNING);
+
             return 1;
         }
         if (array_key_exists(static::QUEUES_NODE, $yml)) {
             if (null === $yml[static::QUEUES_NODE]) {
                 $this->output->write('Empty ' . static::QUEUES_NODE . ' node.', Output::CRITICAL);
+
                 return 1;
             }
             $this->output->write('Start delete queue.', Output::INFO);
@@ -88,8 +91,10 @@ HELP
             $this->output->write('End delete queue.', Output::INFO);
         } else {
             $this->output->write('No ' . static::QUEUES_NODE . ' node found in ' . $fileName . '.', Output::CRITICAL);
+
             return 1;
         }
+
         return 0;
     }
 
@@ -114,18 +119,22 @@ HELP
             $queueClient = $this->getContainer()->get('queue_client');
         } catch (ServiceNotFoundException $e) {
             $this->output->write('No queue client service found.', Output::CRITICAL);
+
             return 1;
         }
         if ($input->getOption('file')) {
             $fileName = $input->getOption('file');
             if (!($force || $helper->ask($input, $output, new ConfirmationQuestion('Delete queues in file "' . $fileName . '"?', false)))) {
+
                 return 0;
             }
+
             return $this->deleteFromFile($queueClient, $fileName);
         } else {
             $queues = $input->getArgument('queues');
             if (count($queues)) {
                 if (!($force || $helper->ask($input, $output, new ConfirmationQuestion(implode("\n", $queues) . "\nDelete queues list above?"  , false)))) {
+
                     return 0;
                 }
                 foreach ($queues as $queue) {
@@ -136,16 +145,20 @@ HELP
                         $this->output->write($e->getMessage(), Output::WARNING);
                     }
                 }
+
                 return 0;
             }
             try {
                 $fileName = $this->getContainer()->getParameter('queue_client.queues_file');
                 if (!($force || $helper->ask($input, $output, new ConfirmationQuestion('Delete queues in file "' . $fileName . '"?', false)))) {
+
                     return 0;
                 }
+
                 return $this->deleteFromFile($queueClient, $fileName);
             } catch (InvalidArgumentException $e) {
                 $this->output->write('No queue_client.queues_file parameter found.', Output::CRITICAL);
+
                 return 1;
             }
         }

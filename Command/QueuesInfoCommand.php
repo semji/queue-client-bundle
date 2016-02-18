@@ -53,6 +53,7 @@ class QueuesInfoCommand extends ContainerAwareCommand
             $queueClient = $this->getContainer()->get('queue_client');
         } catch (ServiceNotFoundException $e) {
             $this->output->write('No queue client service found.', Output::CRITICAL);
+
             return 1;
         }
         $queues = $input->getArgument('queues');
@@ -62,6 +63,7 @@ class QueuesInfoCommand extends ContainerAwareCommand
                 $queues = $queuesList;
             } catch (\Exception $e) {
                 $this->output->write($e->getMessage(), Output::ERROR);
+
                 return 1;
             }
         }
@@ -108,6 +110,7 @@ class QueuesInfoCommand extends ContainerAwareCommand
         }
         if (empty($queues)) {
             $this->output->write('No queue found.', Output::NOTICE);
+
             return 0;
         }
         $table->setRows($arrayRows);
@@ -131,6 +134,7 @@ class QueuesInfoCommand extends ContainerAwareCommand
             $table->setHeaders($headers);
         }
         $table->render();
+
         return 0;
     }
 }

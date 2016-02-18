@@ -50,6 +50,7 @@ class GetMessagesCommand extends ContainerAwareCommand
             $queueClient = $this->getContainer()->get('queue_client');
         } catch (ServiceNotFoundException $e) {
             $this->output->write('No queue client service found.', Output::CRITICAL);
+
             return 1;
         }
         $queueName = $input->getArgument('queueName');
@@ -72,6 +73,7 @@ class GetMessagesCommand extends ContainerAwareCommand
         if ($input->getOption('pop')) {
             $queueClient->deleteMessages($queueName, $messages);
         }
+
         return 0;
     }
 }

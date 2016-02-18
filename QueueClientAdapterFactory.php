@@ -41,6 +41,7 @@ class QueueClientAdapterFactory
                 $adapter = new MemoryAdapter($priorityHandler);
                 break;
         }
+
         return $adapter;
     }
 }

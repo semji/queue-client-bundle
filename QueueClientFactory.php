@@ -69,6 +69,7 @@ class QueueClientFactory
         } else {
             throw new \InvalidArgumentException('No ' . static::QUEUES_NODE . ' node found in ' . $queuesFile . '.');
         }
+
         return $queueClient;
     }
 }
