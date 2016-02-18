@@ -1,0 +1,24 @@
+services:
+    queue_client_adapter_priority_handler:
+        class: "%queue_client.adapter.priority_handler.class%"
+
+    queue_client_adapter_factory:
+        class:  ReputationVIP\Bundle\QueueClientBundle\QueueClientAdapterFactory
+
+    queue_client_factory:
+        class:  ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory
+
+    queue_client_adapter:
+        class: "%queue_client.adapter.class%"
+        factory: ["@queue_client_adapter_factory", get]
+        arguments:
+          - "%queue_client.config%"
+          - "@queue_client_adapter_priority_handler"
+
+    queue_client:
+        class: ReputationVIP\QueueClient\QueueClient
+        factory: ["@queue_client_factory", get]
+        arguments:
+            - "@service_container"
+            - "@queue_client_adapter"
+            - "%queue_client.queues_file%"
