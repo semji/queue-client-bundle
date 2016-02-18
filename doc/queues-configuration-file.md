@@ -2,8 +2,8 @@
 
 ## Usage
 
-this file describe your queues structure.
-It require a main node `queues` with one sub node for each queue. 
+this file describes your queues structure.
+It requires a main node `queues` with one sub node for each queue. 
 
 ## Sample
 
