@@ -33,16 +33,16 @@ class CreateQueuesCommand extends ContainerAwareCommand
             ->addOption('file', 'f', InputOption::VALUE_REQUIRED, 'File to read')
             ->addArgument('queues', InputArgument::IS_ARRAY, 'queues to create')
             ->setHelp(<<<HELP
-This command create queue.
+This command creates queues.
 
-specify file in config file :
+Specify file in config file:
 queue_client:
     queues_file: path/to/file.yml
 
 Or specify file with file option:
     --file=path/to/file.yml
 
-Or list queues to create
+Or list queues to create:
     queue-client:create-queues queue1 queue2 queue3
 HELP
             );
@@ -53,7 +53,8 @@ HELP
      * @param string $fileName
      * @return int
      */
-    private function createFromFile($queueClient, $fileName) {
+    private function createFromFile($queueClient, $fileName)
+    {
         try {
             $yml = Yaml::parse(file_get_contents($fileName));
             array_walk_recursive($yml, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());

@@ -22,10 +22,7 @@ class ListPrioritiesCommand extends ContainerAwareCommand
         $this
             ->setName('queue-client:list-priorities')
             ->setDescription('List priorities')
-            ->setHelp(<<<HELP
-This command list available message priorities.
-HELP
-            );
+            ->setHelp('This command list available message priorities.');
     }
 
     /**

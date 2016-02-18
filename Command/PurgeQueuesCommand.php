@@ -34,16 +34,16 @@ class PurgeQueuesCommand extends ContainerAwareCommand
             ->addOption('force', null, InputOption::VALUE_NONE, 'If set, the task will not ask for confirm purge')
             ->addArgument('queues', InputArgument::IS_ARRAY, 'queues to purge')
             ->setHelp(<<<HELP
-This command purge queue.
+This command purges queues.
 
-specify file in config file :
+Specify file in config file:
 queue_client:
     queues_file: path/to/file.yml
 
 Or specify file with file option:
     --file=path/to/file.yml
 
-Or list queues to purge
+Or list queues to purge:
     queue-client:purge-queues queue1 queue2 queue3
 HELP
             );
@@ -54,7 +54,8 @@ HELP
      * @param string $fileName
      * @return int
      */
-    private function purgeFromFile($queueClient, $fileName) {
+    private function purgeFromFile($queueClient, $fileName)
+    {
         try {
             $yml = Yaml::parse(file_get_contents($fileName));
             array_walk_recursive($yml, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());

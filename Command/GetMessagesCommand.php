@@ -28,10 +28,7 @@ class GetMessagesCommand extends ContainerAwareCommand
             ->addOption('pop', null, InputOption::VALUE_NONE, 'If set, the task will remove ask messages from queue')
             ->addOption('priority', 'p', InputOption::VALUE_OPTIONAL, 'Get messages from specific priority')
             ->addArgument('queueName', InputArgument::REQUIRED, 'queue')
-            ->setHelp(<<<HELP
-This command get messages from queue
-HELP
-            );
+            ->setHelp('This command get messages from queue');
     }
 
     /**

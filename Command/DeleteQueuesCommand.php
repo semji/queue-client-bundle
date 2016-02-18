@@ -34,16 +34,16 @@ class DeleteQueuesCommand extends ContainerAwareCommand
             ->addOption('force', null, InputOption::VALUE_NONE, 'If set, the task will not ask for confirm delete')
             ->addArgument('queues', InputArgument::IS_ARRAY, 'queues to delete')
             ->setHelp(<<<HELP
-This command delete queue.
+This command deletes queues.
 
-specify file in config file :
+Specify file in config file:
 queue_client:
     queues_file: path/to/file.yml
 
 Or specify file with file option:
     --file=path/to/file.yml
 
-Or list queues to delete
+Or list queues to delete:
     queue-client:delete-queues queue1 queue2 queue3
 HELP
             );
@@ -54,7 +54,8 @@ HELP
      * @param string $fileName
      * @return int
      */
-    private function deleteFromFile($queueClient, $fileName) {
+    private function deleteFromFile($queueClient, $fileName)
+    {
         try {
             $yml = Yaml::parse(file_get_contents($fileName));
             array_walk_recursive($yml, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());

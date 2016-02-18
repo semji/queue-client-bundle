@@ -31,10 +31,7 @@ class QueuesInfoCommand extends ContainerAwareCommand
             ->addOption('count', 'c', InputOption::VALUE_NONE, 'Display count messages in queue info')
             ->addOption('priority', 'p', InputOption::VALUE_NONE, 'Display count message for each priorities')
             ->addArgument('queues', InputArgument::IS_ARRAY, 'select info from specific queues')
-            ->setHelp(<<<HELP
-This command display queues information.
-HELP
-            );
+            ->setHelp('This command display queues information.');
     }
 
     /**

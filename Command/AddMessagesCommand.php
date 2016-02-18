@@ -27,10 +27,7 @@ class AddMessagesCommand extends ContainerAwareCommand
             ->addOption('priority', 'p', InputOption::VALUE_OPTIONAL, 'Add in queue with specific priority')
             ->addArgument('queueName', InputArgument::REQUIRED, 'queue')
             ->addArgument('messages', InputArgument::IS_ARRAY, 'messages to add')
-            ->setHelp(<<<HELP
-This command add messages in queue.
-HELP
-            );
+            ->setHelp('This command add messages in queue.');
     }
 
     /**
