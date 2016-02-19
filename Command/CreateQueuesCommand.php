@@ -5,8 +5,10 @@ namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
+use ReputationVIP\Bundle\QueuesConfiguration\QueuesConfiguration;
 use ReputationVIP\QueueClient\QueueClientInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -56,8 +58,10 @@ HELP
     private function createFromFile($queueClient, $fileName)
     {
         try {
-            $yml = Yaml::parse(file_get_contents($fileName));
-            array_walk_recursive($yml, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());
+            $processor = new Processor();
+            $configuration = new QueuesConfiguration();
+            $processedConfiguration = $processor->processConfiguration($configuration, Yaml::parse(file_get_contents($fileName)));
+
         } catch (\Exception $e) {
             $this->output->write($e->getMessage(), Output::CRITICAL);
 
