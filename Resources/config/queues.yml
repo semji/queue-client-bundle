@@ -1,1 +1,2 @@
-queues:
+queue_client:
+  queues:
