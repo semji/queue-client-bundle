@@ -5,7 +5,7 @@ namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
-use ReputationVIP\Bundle\QueuesConfiguration\QueuesConfiguration;
+use ReputationVIP\Bundle\QueueClientBundle\Configuration\QueuesConfiguration;
 use ReputationVIP\QueueClient\QueueClientInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Config\Definition\Processor;
@@ -18,10 +18,6 @@ use Symfony\Component\Yaml\Yaml;
 
 class CreateQueuesCommand extends ContainerAwareCommand
 {
-    const QUEUES_NODE = 'queues';
-    const QUEUE_NAME_NODE = 'name';
-    const QUEUE_ALIASES_NODE = 'aliases';
-
     /**
      * @var Output $output
      */
@@ -67,46 +63,26 @@ HELP
 
             return 1;
         }
-        if (null === $yml) {
-            $this->output->write('File ' . $fileName . ' is empty.', Output::WARNING);
-
-            return 1;
-        }
-        if (array_key_exists(static::QUEUES_NODE, $yml)) {
-            if (null === $yml[static::QUEUES_NODE]) {
-                $this->output->write('Empty ' . static::QUEUES_NODE . ' node.', Output::CRITICAL);
-
-                return 1;
+        array_walk_recursive($processedConfiguration, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());
+        $this->output->write('Start create queue.', Output::INFO);
+        foreach ($processedConfiguration[QueuesConfiguration::QUEUES_NODE] as $queue) {
+            $queueName = $queue[QueuesConfiguration::QUEUE_NAME_NODE];
+            try {
+                $queueClient->createQueue($queueName);
+                $this->output->write('Queue ' . $queueName . ' created.', Output::INFO);
+            } catch (\Exception $e) {
+                $this->output->write($e->getMessage(), Output::WARNING);
             }
-            $this->output->write('Start create queue.', Output::INFO);
-            foreach ($yml[static::QUEUES_NODE] as $queue) {
-                if (empty($queue[static::QUEUE_NAME_NODE])) {
-                    $this->output->write('Empty ' . static::QUEUE_NAME_NODE . ' node.', Output::CRITICAL);
-                }
-                $queueName = $queue[static::QUEUE_NAME_NODE];
+            foreach ($queue[QueuesConfiguration::QUEUE_ALIASES_NODE] as $alias) {
                 try {
-                    $queueClient->createQueue($queueName);
-                    $this->output->write('Queue ' . $queueName . ' created.', Output::INFO);
+                    $queueClient->addAlias($queueName, $alias);
+                    $this->output->write('Queue alias ' . $alias . ' -> ' . $queueName . ' found.', Output::INFO);
                 } catch (\Exception $e) {
                     $this->output->write($e->getMessage(), Output::WARNING);
                 }
-                if (!empty($queue[static::QUEUE_ALIASES_NODE])) {
-                    foreach ($queue[static::QUEUE_ALIASES_NODE] as $alias) {
-                        try {
-                            $queueClient->addAlias($queueName, $alias);
-                            $this->output->write('Queue alias ' . $alias . ' -> ' . $queueName . ' found.', Output::INFO);
-                        } catch (\Exception $e) {
-                            $this->output->write($e->getMessage(), Output::WARNING);
-                        }
-                    }
-                }
             }
-            $this->output->write('End create queue.', Output::INFO);
-        } else {
-            $this->output->write('No ' . static::QUEUES_NODE . ' node found in ' . $fileName . '.', Output::CRITICAL);
-
-            return 1;
         }
+        $this->output->write('End create queue.', Output::INFO);
 
         return 0;
     }

@@ -4,9 +4,11 @@ namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use ReputationVIP\Bundle\QueueClientBundle\Configuration\QueuesConfiguration;
 use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
 use ReputationVIP\QueueClient\QueueClientInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -17,8 +19,6 @@ use Symfony\Component\Yaml\Yaml;
 
 class PurgeQueuesCommand extends ContainerAwareCommand
 {
-    const QUEUES_NODE = 'queues';
-    const QUEUE_NAME_NODE = 'name';
 
     /**
      * @var Output $output
@@ -57,43 +57,27 @@ HELP
     private function purgeFromFile($queueClient, $fileName)
     {
         try {
-            $yml = Yaml::parse(file_get_contents($fileName));
-            array_walk_recursive($yml, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());
+            $processor = new Processor();
+            $configuration = new QueuesConfiguration();
+            $processedConfiguration = $processor->processConfiguration($configuration, Yaml::parse(file_get_contents($fileName)));
+
         } catch (\Exception $e) {
             $this->output->write($e->getMessage(), Output::CRITICAL);
 
             return 1;
         }
-        if (null === $yml) {
-            $this->output->write('File ' . $fileName . ' is empty.', Output::WARNING);
-
-            return 1;
-        }
-        if (array_key_exists(static::QUEUES_NODE, $yml)) {
-            if (null === $yml[static::QUEUES_NODE]) {
-                $this->output->write('Empty ' . static::QUEUES_NODE . ' node.', Output::CRITICAL);
-
-                return 1;
+        array_walk_recursive($processedConfiguration, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());
+        $this->output->write('Start delete queue.', Output::INFO);
+        foreach ($processedConfiguration[QueuesConfiguration::QUEUES_NODE] as $queue) {
+            $queueName = $queue[QueuesConfiguration::QUEUE_NAME_NODE];
+            try {
+                $queueClient->deleteQueue($queueName);
+                $this->output->write('Queue ' . $queueName . ' deleted.', Output::INFO);
+            } catch (\Exception $e) {
+                $this->output->write($e->getMessage(), Output::WARNING);
             }
-            $this->output->write('Start purge queue.', Output::INFO);
-            foreach ($yml[static::QUEUES_NODE] as $queue) {
-                if (empty($queue[static::QUEUE_NAME_NODE])) {
-                    $this->output->write('Empty ' . static::QUEUE_NAME_NODE . ' node.', Output::CRITICAL);
-                }
-                $queueName = $queue[static::QUEUE_NAME_NODE];
-                try {
-                    $queueClient->purgeQueue($queueName);
-                    $this->output->write('Queue ' . $queueName . ' purged.', Output::INFO);
-                } catch (\Exception $e) {
-                    $this->output->write($e->getMessage(), Output::WARNING);
-                }
-            }
-            $this->output->write('End purge queue.', Output::INFO);
-        } else {
-            $this->output->write('No ' . static::QUEUES_NODE . ' node found in ' . $fileName . '.', Output::CRITICAL);
-
-            return 1;
         }
+        $this->output->write('End delete queue.', Output::INFO);
 
         return 0;
     }
