@@ -1,0 +1,25 @@
+{
+  "name": "reputation-vip/queue-client-bundle",
+  "description": "Queue Client Symfony Bundle",
+  "authors": [
+    {
+      "name": "Nicolas Couet",
+      "email": "tejerka@gmail.com"
+    }
+  ],
+  "require": {
+    "reputation-vip/queue-client": "~1.0",
+    "symfony/http-kernel": ">=2.7",
+    "symfony/config": ">=2.7",
+    "symfony/dependency-injection": ">=2.7",
+    "symfony/framework-bundle": ">=2.7",
+    "symfony/console": ">=2.7",
+    "symfony/yaml": ">=2.7",
+    "psr/log": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "ReputationVIP\\Bundle\\QueueClientBundle\\": "/"
+    }
+  }
+}
