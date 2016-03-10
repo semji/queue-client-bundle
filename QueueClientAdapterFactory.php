@@ -28,7 +28,7 @@ class QueueClientAdapterFactory
                 $adapter = new FileAdapter($config['repository'], $priorityHandler);
                 break;
             case 'sqs':
-                $adapter = new SQSAdapter(new SqsClient(array(
+                $adapter = new SQSAdapter(SqsClient::factory(array(
                     'region' => $config['region'],
                     'version' => $config['version'],
                     'credentials' => array(
