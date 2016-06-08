@@ -2,8 +2,10 @@
 
 namespace ReputationVIP\Bundle\QueueClientBundle;
 
+use Psr\Log\LoggerInterface;
 use ReputationVIP\Bundle\QueueClientBundle\Configuration\QueuesConfiguration;
 use ReputationVIP\QueueClient\Adapter\AdapterInterface;
+use ReputationVIP\QueueClient\Adapter\Exception\QueueAccessException;
 use ReputationVIP\QueueClient\QueueClient;
 use ReputationVIP\QueueClient\QueueClientInterface;
 use Symfony\Component\Config\Definition\Processor;
@@ -42,6 +44,8 @@ class QueueClientFactory
      */
     public function get($container, $adapter, $queuesFile)
     {
+        /** @var LoggerInterface $logger */
+        $logger = $container->get('logger');
         $queueClient = new QueueClient($adapter);
         $processor = new Processor();
         $configuration = new QueuesConfiguration();
@@ -53,6 +57,8 @@ class QueueClientFactory
             foreach ($queue[QueuesConfiguration::QUEUE_ALIASES_NODE] as $alias) {
                 try {
                     $queueClient->addAlias($queueName, $alias);
+                } catch (QueueAccessException $e) {
+                    $logger->warning($e->getMessage());
                 } catch (\ErrorException $e) {
                     if ($e->getSeverity() === E_ERROR) {
                         throw $e;

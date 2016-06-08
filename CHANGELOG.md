@@ -1,5 +1,9 @@
 # Queue Client Bundle Changelog
 
+## v1.0.3
+
+- Change from error to warning when try to add alias on unknown queue
+
 ## v1.0.2
 
 - Add AWS backwards compatibility
