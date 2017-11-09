@@ -20,7 +20,6 @@ class QueueClientAdapterFactory
     public function get($config, $priorityHandler) {
         $adapter = null;
 
-        var_dump($config['type']);
         switch ($config['type']) {
             case 'null':
                 $adapter = new NullAdapter();

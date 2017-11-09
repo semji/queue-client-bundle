@@ -1,5 +1,9 @@
 # Queue Client Bundle Changelog
 
+## v1.1.1
+
+- Remove debug code
+
 ## v1.1.0
 
 - Handle symfony >= 3.3
