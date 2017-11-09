@@ -20,6 +20,7 @@ class QueueClientAdapterFactory
     public function get($config, $priorityHandler) {
         $adapter = null;
 
+        var_dump($config['type']);
         switch ($config['type']) {
             case 'null':
                 $adapter = new NullAdapter();
@@ -40,6 +41,8 @@ class QueueClientAdapterFactory
             case 'memory':
                 $adapter = new MemoryAdapter($priorityHandler);
                 break;
+            default:
+                throw new \InvalidArgumentException('Unknown handler type : ' . $config['type']);
         }
 
         return $adapter;

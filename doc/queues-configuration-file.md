@@ -7,7 +7,7 @@ It requires a main node `queues` with one sub node for each queue.
 
 ## Sample
 
-```
+```yaml
 queue_client:
   queues:
     queue1:
@@ -16,7 +16,7 @@ queue_client:
           - queue1-alias1
           - queue1-alias2
     queue2:
-        name: queue2
+        name: "%queue_client.queue_prefix%-queue2"
         aliases:
           - queue2-alias1
           - queue2-alias2

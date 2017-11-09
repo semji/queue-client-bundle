@@ -9,7 +9,7 @@ services:
         class:  ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory
 
     queue_client_adapter:
-        class: "%queue_client.adapter.class%"
+        class: ReputationVIP\QueueClient\Adapter\AbstractAdapter
         factory: ["@queue_client_adapter_factory", get]
         arguments:
           - "%queue_client.config%"

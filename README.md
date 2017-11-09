@@ -49,6 +49,7 @@ queue_client:
 ### General configuration
 
 - ```queues_file``` specifies the default [queues configuration file](doc/queues-configuration-file.md).
+- ```queue_prefix``` specifies a queue prefix can use in [queues configuration file](doc/queues-configuration-file.md).
 - ```priority_handler``` specifies the priority handler. Default is the `ReputationVIP\QueueClient\PriorityHandler\StandardPriorityHandler`.
 
 ### Available adapter types

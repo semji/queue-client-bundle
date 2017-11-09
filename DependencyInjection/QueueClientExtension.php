@@ -11,12 +11,7 @@ class QueueClientExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container)
     {
-        $adapterChoice = array(
-            'sqs' => 'ReputationVIP\QueueClient\Adapter\SQSAdapter',
-            'file' => 'ReputationVIP\QueueClient\Adapter\FileAdapter',
-            'memory' => 'ReputationVIP\QueueClient\Adapter\MemoryAdapter',
-            'null' => 'ReputationVIP\QueueClient\Adapter\NullAdapter'
-        );
+
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
@@ -24,11 +19,8 @@ class QueueClientExtension extends Extension
             $container,
             new FileLocator(__DIR__.'/../Resources/config')
         );
-        $loader->load('services.yml');
 
-        if (!isset($adapterChoice[$config['adapter']['type']])) {
-            throw new \InvalidArgumentException('Unknown handler type : ' . $config['adapter']['type']);
-        }
+        $loader->load('services.yml');
 
         $container->setParameter(
             'queue_client.adapter.priority_handler.class',
@@ -39,8 +31,8 @@ class QueueClientExtension extends Extension
             $config['queues_file']
         );
         $container->setParameter(
-            'queue_client.adapter.class',
-            $adapterChoice[$config['adapter']['type']]
+            'queue_client.queue_prefix',
+            $config['queue_prefix']
         );
         $container->setParameter(
             'queue_client.config',

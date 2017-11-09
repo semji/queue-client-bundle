@@ -1,5 +1,9 @@
 # Queue Client Bundle Changelog
 
+## v1.1.0
+
+- Handle symfony >= 3.3
+
 ## v1.0.3
 
 - Change from error to warning when try to add alias on unknown queue
