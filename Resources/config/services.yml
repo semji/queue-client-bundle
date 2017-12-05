@@ -1,24 +1,31 @@
 services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
     queue_client_adapter_priority_handler:
         class: "%queue_client.adapter.priority_handler.class%"
 
-    queue_client_adapter_factory:
-        class:  ReputationVIP\Bundle\QueueClientBundle\QueueClientAdapterFactory
+    ReputationVIP\Bundle\QueueClientBundle\QueueClientAdapterFactory: ~
 
-    queue_client_factory:
-        class:  ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory
+    ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory: ~
 
-    queue_client_adapter:
-        class: ReputationVIP\QueueClient\Adapter\AbstractAdapter
-        factory: ["@queue_client_adapter_factory", get]
+    ReputationVIP\QueueClient\Adapter\AbstractAdapter:
+        factory: ['@ReputationVIP\Bundle\QueueClientBundle\QueueClientAdapterFactory', get]
         arguments:
-          - "%queue_client.config%"
-          - "@queue_client_adapter_priority_handler"
+            $config: "%queue_client.config%"
+            $priorityHandler: "@queue_client_adapter_priority_handler"
 
-    queue_client:
-        class: ReputationVIP\QueueClient\QueueClient
-        factory: ["@queue_client_factory", get]
+    ReputationVIP\QueueClient\QueueClient:
+        factory: ['@ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory', get]
         arguments:
-            - "@service_container"
-            - "@queue_client_adapter"
-            - "%queue_client.queues_file%"
+            $container: '@service_container'
+            $adapter: '@ReputationVIP\QueueClient\Adapter\AbstractAdapter'
+            $queuesFile: '%queue_client.queues_file%'
+
+    ReputationVIP\QueueClient\QueueClientInterface: '@ReputationVIP\QueueClient\QueueClient'
+
+    ReputationVIP\Bundle\QueueClientBundle\Command\:
+        resource: '../../Command/*'
+        tags: ['console.command']

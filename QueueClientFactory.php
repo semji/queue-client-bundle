@@ -14,6 +14,15 @@ use Symfony\Component\Yaml\Yaml;
 
 class QueueClientFactory
 {
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
 
     /**
      * @param $item
@@ -39,16 +48,17 @@ class QueueClientFactory
      * @param ContainerInterface $container
      * @param AdapterInterface $adapter
      * @param string $queuesFile
+     *
      * @return null|QueueClientInterface
+     *
      * @throws \ErrorException
      */
-    public function get($container, $adapter, $queuesFile)
+    public function get(ContainerInterface $container, AdapterInterface $adapter, $queuesFile)
     {
-        /** @var LoggerInterface $logger */
-        $logger = $container->get('logger');
         $queueClient = new QueueClient($adapter);
         $processor = new Processor();
         $configuration = new QueuesConfiguration();
+
         $processedConfiguration = $processor->processConfiguration($configuration, Yaml::parse(file_get_contents($queuesFile)));
 
         array_walk_recursive($processedConfiguration, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $container);
@@ -58,7 +68,7 @@ class QueueClientFactory
                 try {
                     $queueClient->addAlias($queueName, $alias);
                 } catch (QueueAccessException $e) {
-                    $logger->warning($e->getMessage());
+                    $this->logger->warning($e->getMessage());
                 } catch (\ErrorException $e) {
                     if ($e->getSeverity() === E_ERROR) {
                         throw $e;

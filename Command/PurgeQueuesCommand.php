@@ -3,9 +3,7 @@
 namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
 use ReputationVIP\Bundle\QueueClientBundle\Configuration\QueuesConfiguration;
-use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
 use ReputationVIP\QueueClient\QueueClientInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Config\Definition\Processor;
@@ -14,16 +12,19 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\Yaml\Yaml;
 
 class PurgeQueuesCommand extends ContainerAwareCommand
 {
+    /** @var QueueClientInterface */
+    private $queueClient;
 
-    /**
-     * @var Output $output
-     */
-    private $output;
+    public function __construct(QueueClientInterface $queueClient)
+    {
+        parent::__construct();
+
+        $this->queueClient = $queueClient;
+    }
 
     protected function configure()
     {
@@ -51,12 +52,12 @@ HELP
     }
 
     /**
-     * @param QueueClientInterface $queueClient
-     * @param string $fileName
-     * @param string|null $priority
+     * @param OutputInterface $output
+     * @param $fileName
+     * @param $priority
      * @return int
      */
-    private function purgeFromFile($queueClient, $fileName, $priority)
+    private function purgeFromFile(OutputInterface $output, $fileName, $priority)
     {
         try {
             $processor = new Processor();
@@ -64,22 +65,22 @@ HELP
             $processedConfiguration = $processor->processConfiguration($configuration, Yaml::parse(file_get_contents($fileName)));
 
         } catch (\Exception $e) {
-            $this->output->write($e->getMessage(), Output::CRITICAL);
+            $output->writeln($e->getMessage());
 
             return 1;
         }
         array_walk_recursive($processedConfiguration, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());
-        $this->output->write('Start purge queue.', Output::INFO);
+        $output->writeln('Start purge queue.');
         foreach ($processedConfiguration[QueuesConfiguration::QUEUES_NODE] as $queue) {
             $queueName = $queue[QueuesConfiguration::QUEUE_NAME_NODE];
             try {
-                $queueClient->purgeQueue($queueName, $priority);
-                $this->output->write('Queue ' . $queueName . ' purged.', Output::INFO);
+                $this->queueClient->purgeQueue($queueName, $priority);
+                $output->writeln('Queue ' . $queueName . ' purged.');
             } catch (\Exception $e) {
-                $this->output->write($e->getMessage(), Output::WARNING);
+                $output->writeln($e->getMessage());
             }
         }
-        $this->output->write('End purge queue.', Output::INFO);
+        $output->writeln('End purge queue.');
 
         return 0;
     }
@@ -94,25 +95,10 @@ HELP
         $helper = $this->getHelper('question');
         $force = $input->getOption('force') ? true : false;
 
-        try {
-            /** @var LoggerInterface $logger */
-            $logger = $this->getContainer()->get('logger');
-        } catch (ServiceNotFoundException $e) {
-            $logger = null;
-        }
-        $this->output = new Output($logger, $output);
-        try {
-            /** @var QueueClientInterface $queueClient */
-            $queueClient = $this->getContainer()->get('queue_client');
-        } catch (ServiceNotFoundException $e) {
-            $this->output->write('No queue client service found.', Output::CRITICAL);
-
-            return 1;
-        }
         $priority = null;
         if ($input->getOption('priority')) {
             $priority = $input->getOption('priority');
-            if (!in_array($priority, $queueClient->getPriorityHandler()->getAll())) {
+            if (!in_array($priority, $this->queueClient->getPriorityHandler()->getAll())) {
                 throw new \InvalidArgumentException('Priority "' . $priority . '" not found.');
             }
         }
@@ -123,7 +109,7 @@ HELP
                 return 0;
             }
 
-            return $this->purgeFromFile($queueClient, $fileName, $priority);
+            return $this->purgeFromFile($output, $fileName, $priority);
         } else {
             $queues = $input->getArgument('queues');
             if (count($queues)) {
@@ -133,10 +119,10 @@ HELP
                 }
                 foreach ($queues as $queue) {
                     try {
-                        $queueClient->purgeQueue($queue, $priority);
-                        $this->output->write('Queue ' . $queue . ' purged.', Output::INFO);
+                        $this->queueClient->purgeQueue($queue, $priority);
+                        $output->writeln('Queue ' . $queue . ' purged.');
                     } catch (\Exception $e) {
-                        $this->output->write($e->getMessage(), Output::WARNING);
+                        $output->writeln($e->getMessage());
                     }
                 }
 
@@ -149,9 +135,9 @@ HELP
                     return 0;
                 }
 
-                return $this->purgeFromFile($queueClient, $fileName, $priority);
+                return $this->purgeFromFile($output, $fileName, $priority);
             } catch (InvalidArgumentException $e) {
-                $this->output->write('No queue_client.queues_file parameter found.', Output::CRITICAL);
+                $output->writeln('No queue_client.queues_file parameter found.');
 
                 return 1;
             }

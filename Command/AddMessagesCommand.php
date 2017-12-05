@@ -2,22 +2,24 @@
 
 namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 
-use Psr\Log\LoggerInterface;
-use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
 use ReputationVIP\QueueClient\QueueClientInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
-class AddMessagesCommand extends ContainerAwareCommand
+class AddMessagesCommand extends Command
 {
-    /**
-     * @var Output $output
-     */
-    private $output;
+    /** @var QueueClientInterface */
+    private $queueClient;
+
+    public function __construct(QueueClientInterface $queueClient)
+    {
+        parent::__construct();
+
+        $this->queueClient = $queueClient;
+    }
 
     protected function configure()
     {
@@ -27,7 +29,8 @@ class AddMessagesCommand extends ContainerAwareCommand
             ->addOption('priority', 'p', InputOption::VALUE_OPTIONAL, 'Add in queue with specific priority')
             ->addArgument('queueName', InputArgument::REQUIRED, 'queue')
             ->addArgument('messages', InputArgument::IS_ARRAY, 'messages to add')
-            ->setHelp('This command add messages in queue.');
+            ->setHelp('This command add messages in queue.')
+        ;
     }
 
     /**
@@ -37,20 +40,10 @@ class AddMessagesCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        try {
-            /** @var LoggerInterface $logger */
-            $logger = $this->getContainer()->get('logger');
-        } catch (ServiceNotFoundException $e) {
-            $logger = null;
-        }
-        $this->output = new Output($logger, $output);
-        /** @var QueueClientInterface $queueClient */
-        $queueClient = $this->getContainer()->get('queue_client');
-
         $priority = null;
         if ($input->getOption('priority')) {
             $priority = $input->getOption('priority');
-            if (!in_array($priority, $queueClient->getPriorityHandler()->getAll())) {
+            if (!in_array($priority, $this->queueClient->getPriorityHandler()->getAll())) {
                 throw new \InvalidArgumentException('Priority "' . $priority . '" not found.');
             }
         }
@@ -58,7 +51,7 @@ class AddMessagesCommand extends ContainerAwareCommand
         $queueName = $input->getArgument('queueName');
         $messages = $input->getArgument('messages');
 
-        $queueClient->addMessages($queueName, $messages, $priority);
+        $this->queueClient->addMessages($queueName, $messages, $priority);
 
         return 0;
     }

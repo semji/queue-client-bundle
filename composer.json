@@ -9,12 +9,12 @@
   ],
   "require": {
     "reputation-vip/queue-client": "~1.0",
-    "symfony/http-kernel": ">=2.7",
-    "symfony/config": ">=2.7",
-    "symfony/dependency-injection": ">=2.7",
-    "symfony/framework-bundle": ">=2.7",
-    "symfony/console": ">=2.7",
-    "symfony/yaml": ">=2.7",
+    "symfony/http-kernel": ">=3.3",
+    "symfony/config": ">=3.3",
+    "symfony/dependency-injection": ">=3.3",
+    "symfony/framework-bundle": ">=3.3",
+    "symfony/console": ">=3.3",
+    "symfony/yaml": ">=3.3",
     "psr/log": "^1.0"
   },
   "autoload": {
