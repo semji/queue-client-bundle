@@ -3,17 +3,26 @@
 namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 
 use ReputationVIP\QueueClient\QueueClientInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
-class QueuesInfoCommand extends ContainerAwareCommand
+class QueuesInfoCommand extends Command
 {
+    /** @var QueueClientInterface */
+    private $queueClient;
+
+    public function __construct(QueueClientInterface $queueClient)
+    {
+        parent::__construct();
+
+        $this->queueClient = $queueClient;
+    }
+
     protected function configure()
     {
         $this
@@ -30,20 +39,13 @@ class QueuesInfoCommand extends ContainerAwareCommand
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
+     *
      * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        try {
-            /** @var QueueClientInterface $queueClient */
-            $queueClient = $this->getContainer()->get('queue_client');
-        } catch (ServiceNotFoundException $e) {
-            $output->writeln('No queue client service found.');
-
-            return 1;
-        }
         $queues = $input->getArgument('queues');
-        $queuesList = $queueClient->listQueues();
+        $queuesList = $this->queueClient->listQueues();
         if (0 === count($queues)) {
             try {
                 $queues = $queuesList;
@@ -60,11 +62,11 @@ class QueuesInfoCommand extends ContainerAwareCommand
         $priorities = [];
 
         if ($input->getOption('alias')) {
-            $queuesAliases = $queueClient->getAliases();
+            $queuesAliases = $this->queueClient->getAliases();
         }
 
         if ($input->getOption('priority')) {
-            $priorities = $queueClient->getPriorityHandler()->getAll();
+            $priorities = $this->queueClient->getPriorityHandler()->getAll();
         }
 
         foreach ($queues as $queue) {
@@ -73,11 +75,11 @@ class QueuesInfoCommand extends ContainerAwareCommand
                 if ($input->getOption('count')) {
                     if ($input->getOption('priority')) {
                         foreach ($priorities as $priority) {
-                            $count = $queueClient->getNumberMessages($queue, $priority);
+                            $count = $this->queueClient->getNumberMessages($queue, $priority);
                             $row[] = $count;
                         }
                     } else {
-                        $count = $queueClient->getNumberMessages($queue);
+                        $count = $this->queueClient->getNumberMessages($queue);
                         $row[] = $count;
                     }
                 }
