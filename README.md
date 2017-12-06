@@ -69,4 +69,3 @@ queue_client:
 - ```secret:``` this config value set the SQS secret.
 - ```region:``` this config value set the SQS region (default `eu-west-1`).
 - ```version:``` this config value set the SQS version (default `2012-11-05`).
-

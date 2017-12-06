@@ -2,20 +2,22 @@
 
 namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 
-use Psr\Log\LoggerInterface;
-use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
 use ReputationVIP\QueueClient\QueueClientInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
-class ListPrioritiesCommand extends ContainerAwareCommand
+class ListPrioritiesCommand extends Command
 {
-    /**
-     * @var Output $output
-     */
-    private $output;
+    /** @var QueueClientInterface */
+    private $queueClient;
+
+    public function __construct(QueueClientInterface $queueClient)
+    {
+        parent::__construct();
+
+        $this->queueClient = $queueClient;
+    }
 
     protected function configure()
     {
@@ -32,23 +34,8 @@ class ListPrioritiesCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        try {
-            /** @var LoggerInterface $logger */
-            $logger = $this->getContainer()->get('logger');
-        } catch (ServiceNotFoundException $e) {
-            $logger = null;
-        }
-        $this->output = new Output($logger, $output);
-        try {
-            /** @var QueueClientInterface $queueClient */
-            $queueClient = $this->getContainer()->get('queue_client');
-        } catch (ServiceNotFoundException $e) {
-            $this->output->write('No queue client service found.', Output::CRITICAL);
-
-            return 1;
-        }
-        foreach ($queueClient->getPriorityHandler()->getAll() as $priority) {
-            $output->writeln($priority);
+        foreach ($this->queueClient->getPriorityHandler()->getAll() as $priority) {
+            $output->writeln($priority->getName());
         }
 
         return 0;

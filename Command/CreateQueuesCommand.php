@@ -3,8 +3,6 @@
 namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
-use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
 use ReputationVIP\Bundle\QueueClientBundle\Configuration\QueuesConfiguration;
 use ReputationVIP\QueueClient\QueueClientInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -13,15 +11,19 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\Yaml\Yaml;
 
 class CreateQueuesCommand extends ContainerAwareCommand
 {
-    /**
-     * @var Output $output
-     */
-    private $output;
+    /** @var QueueClientInterface */
+    private $queueClient;
+
+    public function __construct(QueueClientInterface $queueClient)
+    {
+        parent::__construct();
+
+        $this->queueClient = $queueClient;
+    }
 
     protected function configure()
     {
@@ -47,11 +49,13 @@ HELP
     }
 
     /**
+     * @param OutputInterface $output
      * @param QueueClientInterface $queueClient
      * @param string $fileName
+     *
      * @return int
      */
-    private function createFromFile($queueClient, $fileName)
+    private function createFromFile(OutputInterface $output, QueueClientInterface $queueClient, $fileName)
     {
         try {
             $processor = new Processor();
@@ -59,30 +63,30 @@ HELP
             $processedConfiguration = $processor->processConfiguration($configuration, Yaml::parse(file_get_contents($fileName)));
 
         } catch (\Exception $e) {
-            $this->output->write($e->getMessage(), Output::CRITICAL);
+            $output->writeln($e->getMessage());
 
             return 1;
         }
         array_walk_recursive($processedConfiguration, 'ReputationVIP\Bundle\QueueClientBundle\QueueClientFactory::resolveParameters', $this->getContainer());
-        $this->output->write('Start create queue.', Output::INFO);
+        $output->writeln('Start create queue.');
         foreach ($processedConfiguration[QueuesConfiguration::QUEUES_NODE] as $queue) {
             $queueName = $queue[QueuesConfiguration::QUEUE_NAME_NODE];
             try {
                 $queueClient->createQueue($queueName);
-                $this->output->write('Queue ' . $queueName . ' created.', Output::INFO);
+                $output->writeln('Queue ' . $queueName . ' created.');
             } catch (\Exception $e) {
-                $this->output->write($e->getMessage(), Output::WARNING);
+                $output->writeln($e->getMessage());
             }
             foreach ($queue[QueuesConfiguration::QUEUE_ALIASES_NODE] as $alias) {
                 try {
                     $queueClient->addAlias($queueName, $alias);
-                    $this->output->write('Queue alias ' . $alias . ' -> ' . $queueName . ' found.', Output::INFO);
+                    $output->writeln('Queue alias ' . $alias . ' -> ' . $queueName . ' found.');
                 } catch (\Exception $e) {
-                    $this->output->write($e->getMessage(), Output::WARNING);
+                    $output->writeln($e->getMessage());
                 }
             }
         }
-        $this->output->write('End create queue.', Output::INFO);
+        $output->writeln('End create queue.');
 
         return 0;
     }
@@ -94,34 +98,19 @@ HELP
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        try {
-            /** @var LoggerInterface $logger */
-            $logger = $this->getContainer()->get('logger');
-        } catch (ServiceNotFoundException $e) {
-            $logger = null;
-        }
-        $this->output = new Output($logger, $output);
-        try {
-            /** @var QueueClientInterface $queueClient */
-            $queueClient = $this->getContainer()->get('queue_client');
-        } catch (ServiceNotFoundException $e) {
-            $this->output->write('No queue client service found.', Output::CRITICAL);
-
-            return 1;
-        }
         if ($input->getOption('file')) {
             $fileName = $input->getOption('file');
 
-            return $this->createFromFile($queueClient, $fileName);
+            return $this->createFromFile($output, $this->queueClient, $fileName);
         } else {
             $queues = $input->getArgument('queues');
             if (count($queues)) {
                 foreach ($queues as $queue) {
                     try {
-                        $queueClient->createQueue($queue);
-                        $this->output->write('Queue ' . $queue . ' created.', Output::INFO);
+                        $this->queueClient->createQueue($queue);
+                        $output->writeln('Queue ' . $queue . ' created.');
                     } catch (\Exception $e) {
-                        $this->output->write($e->getMessage(), Output::WARNING);
+                        $output->writeln($e->getMessage());
                     }
                 }
 
@@ -130,9 +119,9 @@ HELP
             try {
                 $fileName = $this->getContainer()->getParameter('queue_client.queues_file');
 
-                return $this->createFromFile($queueClient, $fileName);
+                return $this->createFromFile($output, $this->queueClient, $fileName);
             } catch (InvalidArgumentException $e) {
-                $this->output->write('No queue_client.queues_file parameter found.', Output::CRITICAL);
+                $output->writeln('No queue_client.queues_file parameter found.');
 
                 return 1;
             }

@@ -1,5 +1,11 @@
 # Queue Client Bundle Changelog
 
+## v2.0.0
+
+- Use autowire
+- Explicitly declare Commands
+- [BR] Symfony 3.3 is now required
+
 ## v1.1.1
 
 - Remove debug code

@@ -2,24 +2,26 @@
 
 namespace ReputationVIP\Bundle\QueueClientBundle\Command;
 
-use Psr\Log\LoggerInterface;
-use ReputationVIP\Bundle\QueueClientBundle\Utils\Output;
 use ReputationVIP\QueueClient\QueueClientInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
-class QueuesInfoCommand extends ContainerAwareCommand
+class QueuesInfoCommand extends Command
 {
-    /**
-     * @var Output
-     */
-    private $output;
+    /** @var QueueClientInterface */
+    private $queueClient;
+
+    public function __construct(QueueClientInterface $queueClient)
+    {
+        parent::__construct();
+
+        $this->queueClient = $queueClient;
+    }
 
     protected function configure()
     {
@@ -37,32 +39,18 @@ class QueuesInfoCommand extends ContainerAwareCommand
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
+     *
      * @return int
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        try {
-            /** @var LoggerInterface $logger */
-            $logger = $this->getContainer()->get('logger');
-        } catch (ServiceNotFoundException $e) {
-            $logger = null;
-        }
-        $this->output = new Output($logger, $output);
-        try {
-            /** @var QueueClientInterface $queueClient */
-            $queueClient = $this->getContainer()->get('queue_client');
-        } catch (ServiceNotFoundException $e) {
-            $this->output->write('No queue client service found.', Output::CRITICAL);
-
-            return 1;
-        }
         $queues = $input->getArgument('queues');
-        $queuesList = $queueClient->listQueues();
+        $queuesList = $this->queueClient->listQueues();
         if (0 === count($queues)) {
             try {
                 $queues = $queuesList;
             } catch (\Exception $e) {
-                $this->output->write($e->getMessage(), Output::ERROR);
+                $output->writeln($e->getMessage());
 
                 return 1;
             }
@@ -74,22 +62,24 @@ class QueuesInfoCommand extends ContainerAwareCommand
         $priorities = [];
 
         if ($input->getOption('alias')) {
-            $queuesAliases = $queueClient->getAliases();
+            $queuesAliases = $this->queueClient->getAliases();
         }
+
         if ($input->getOption('priority')) {
-            $priorities = $queueClient->getPriorityHandler()->getAll();
+            $priorities = $this->queueClient->getPriorityHandler()->getAll();
         }
+
         foreach ($queues as $queue) {
             if (in_array($queue, $queuesList)) {
                 $row = [$queue];
                 if ($input->getOption('count')) {
                     if ($input->getOption('priority')) {
                         foreach ($priorities as $priority) {
-                            $count = $queueClient->getNumberMessages($queue, $priority);
+                            $count = $this->queueClient->getNumberMessages($queue, $priority);
                             $row[] = $count;
                         }
                     } else {
-                        $count = $queueClient->getNumberMessages($queue);
+                        $count = $this->queueClient->getNumberMessages($queue);
                         $row[] = $count;
                     }
                 }
@@ -105,14 +95,16 @@ class QueuesInfoCommand extends ContainerAwareCommand
                 }
                 $arrayRows[] = $row;
             } else {
-                $this->output->write('Queue "' . $queue . '" does not exists.', Output::WARNING);
+                $output->writeln('Queue "' . $queue . '" does not exists.');
             }
         }
+
         if (empty($queues)) {
-            $this->output->write('No queue found.', Output::NOTICE);
+            $output->writeln('No queue found.');
 
             return 0;
         }
+
         $table->setRows($arrayRows);
         if (!$input->getOption('no-header')) {
             $headers = [];
